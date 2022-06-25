@@ -1,4 +1,12 @@
-import { Box, Button, useDisclosure } from '@chakra-ui/react'
+import { Box, Button, useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+} from '@chakra-ui/react'
 import { useEffect } from 'react'
 import AppModal from '@components/AppModal'
 import abi from '@constants/abi'
@@ -17,27 +25,35 @@ import hre from 'hardhat';
 import  fs from 'fs';
 import { SafeTransactionData } from '@gnosis.pm/safe-core-sdk-types'
 
+import useTransactions from '@hooks/useTransactions'
+import { useHashTransactionStore } from '@stores/transactionStore'
 
 
- /// This is where we will be creating our transfer 
-const CreateTransfer = () => {
-  const modalDisclosure = useDisclosure()
+const setTransaction = useHashTransactionStore((state) => state.setTransaction)
+const setTransactionData = useHashTransactionStore((state) => state.setTransactionData)
 // UI
-  const { pathname } = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-
-  // EXEC
-  const isModuleEnabledInternal = useSafeStore(({ isModuleEnabled }: Safe) => isModuleEnabled)
-
+const { pathname } = useRouter()
+const [isLoading, setIsLoading] = useState(false)
   // Destruction, we are setting it to the compponent
   const { safeSdk, safeService, signer, safeAddress } = useSafeSdk()
+ /// This is where we will be creating our transfer 
+
+
+ const modalDisclosure = useDisclosure()
+
+ const { isOpen, onOpen, onClose } = useDisclosure()
+ // EXEC
+ const isModuleEnabledInternal = useSafeStore(({ isModuleEnabled }: Safe) => isModuleEnabled)
+
+ const CreateTransfer = () => {
+
   //has those information easily and already 
 
 //  asset: string
 // amount: number
  // recipient: string
 // createBulkTransferTxnCb = useCallBack() {
-
+/*
   const GnosisSafeContractFileabi  = "./artifacts/contracts/GnosisSafeGetAddresses.json";
  
   let myabi = JSON.parse(fs.readFileSync('GnosisSafeContractFileabi').toString());
@@ -88,11 +104,54 @@ const CreateTransfer = () => {
 
 //}
   ///
+*/
+const txhash  = useHashTransactionStore((state) => state.txhash)
+const txdata = useHashTransactionStore((state) => state.txdata)
+
+  const createSwapTransaction  =useCallback(   
+
+  async ( ) => {
+    if (safeSdk && signer) {
+      setIsLoading(true)      
+
+      const tx = await safeService.getTransaction(txhash)
+  
+      const safeTransactionData: SafeTransactionData = {
+        to: tx.to,
+        value: tx.value,
+        data: tx.data ? txdata : '0x',
+        operation: tx.operation,
+        safeTxGas: tx.safeTxGas,
+        baseGas: tx.baseGas,
+        gasPrice: Number(tx.gasPrice),
+        gasToken: tx.gasToken,
+        refundReceiver: tx.refundReceiver ? tx.refundReceiver : '0x0000000000000000000000000000000000000000',
+        nonce: tx.nonce,
+      }
+      const safeNextTransaction = await safeSdk.createTransaction(safeTransactionData)
+      await safeSdk.signTransaction(safeNextTransaction)
+      const safeTxHash = await safeSdk.getTransactionHash(safeNextTransaction)
+    
+      await safeService.proposeTransaction({
+        safeAddress,
+        safeNextTransaction,
+        safeTxHash,
+        senderAddress: await signer.getAddress(),
+      })
+      setIsLoading(false)
+      modalDisclosure.onClose()
+    }
+  },
+  [safeAddress, safeSdk, signer, safeService, modalDisclosure]
+)
+
+//amount, tokentransfer, and a react hook
+
 
   const createBulkTransferTxnCb = useCallback(
-    
+ 
     async (recipients: Array<CreateTransferInput>) => {
-     
+      if (safeSdk && signer) {
       setIsLoading(true)
         // We create a transaction with this receipients
       const txValue = recipients.reduce<string[][]>(
@@ -106,8 +165,9 @@ const CreateTransfer = () => {
         ],
         []
       )
-
-      if (safeSdk && signer) {
+   
+      
+    
             //
         const smartContract = new ethersUtils.Interface(abi)
    
@@ -134,11 +194,12 @@ const CreateTransfer = () => {
         })
         setIsLoading(false)
         modalDisclosure.onClose()
-      }
-    },
+      }},
+    
+    
     [safeAddress, safeSdk, signer, safeService, modalDisclosure]
   )
-
+  
  // Question, how are the values passed
  // We find CreateTransferInput
   const formMethods = useForm<TCreateTransferFormSchemaValues>({
@@ -153,14 +214,16 @@ const CreateTransfer = () => {
       ],
     },
   })
-// The bulk transfer 
-  return (
+
+
+
+return (
     <Box w="full">
       <AppModal disclosure={modalDisclosure} closeOnOverlayClick={false}>
-        FOR PROVIDER HERE  , THE INPUTS ARE COLLECTED VIA ATHE FORM PROVIDER
+       
         <FormProvider {...formMethods}>
 
-          CUSTOM FORM NAME /// THE FORM, WE USE THE FORM PROP WE USED HERE  
+         
           <CreateTransferForm
             onSubmit={(v) => createBulkTransferTxnCb(v.recipients)}
             disclosure={modalDisclosure}
@@ -168,18 +231,43 @@ const CreateTransfer = () => {
           />
         </FormProvider>
       </AppModal>
+
       <Button
         colorScheme="blue"
         w="full"
         size="sm"
-        isDisabled={pathname !== '/safe/[safeAddress]/transfers' || !isModuleEnabledInternal}
-        onClick={modalDisclosure.onToggle}
- 
-      >
+        isLoading={isLoading}
+       // isDisabled={pathname !== '/safe/[safeAddress]/transfers' || !isModuleEnabledInternal}
+        onClick={ ()=> {
+          
+
+         
+          <Modal isOpen={isOpen} onClose={onClose}>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader> Create Transfer Transaction</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              If you will like to confirm transfer for the following transaction
+            </ModalBody>
+  
+            <ModalFooter>
+              <Button colorScheme='blue' mr={3} onClick={onClose}>
+                Close
+              </Button>
+              <Button variant='ghost'>Confirm Transfer </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+          
+        }
+        }>
         Create transfer
       </Button>
     </Box>
   )
-}
+  
+      }
 
 export default CreateTransfer
+ 
