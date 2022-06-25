@@ -33,7 +33,8 @@ export interface AssetType {
 }
 
 export type TokenType = {
-  name: string
+  amount: number
+  tokenname: string
   symbol: string
   decimals: number
   logoUri: string
@@ -83,3 +84,32 @@ export interface TokenTypesDetails {
 
 
 }
+
+
+export interface TokenDepositvalue {
+  amount: number
+  tokenname:string,
+  symbol:string 
+}
+
+
+export type SwapTransactionType = {
+  tokentxhash: string
+  nonce:number 
+  amount:number
+  tokenname:string
+  symbol:string
+  logoUri:string 
+  txdata?: string
+ }
+
+/*
+ export type Tokens = {
+  symbol: string
+  tokenstring: string
+  decimals: number
+  logoUri: string
+  address:string
+  date: string
+ }
+*/
