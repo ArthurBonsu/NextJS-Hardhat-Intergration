@@ -27,6 +27,17 @@ export interface  Transactions{
  recipient: string 
 }
 
+export interface SwapTokenTransaction{
+  amount: number
+  tokentxhash: string 
+  tokenname: string
+  symbol: string
+  logoUri:string 
+  signer:string
+  txdata?: string
+}
+
+
 
 
 
