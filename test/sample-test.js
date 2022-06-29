@@ -106,7 +106,7 @@ const {
 
    // provider = new ethers.providers.getDefaultProvider("ropsten");
   //  signer = provider.getSigner()
-
+ // provider = provider = new InfuraProvider("ropsten");
      //signeraddress =signer._address;
 
     // `beforeEach` will run before each test, re-deploying the contract every
@@ -124,13 +124,14 @@ const {
 
 
   
-       
+    let provider = new ethers.providers.InfuraProvider('ropsten');
 
        console.log("This is my provider" + provider);
       
        walletsigner = await new  ethers.Wallet.fromMnemonic(String(process.env.MNEMONIC)) 
        signer =  walletsigner.address;
        account = await  walletsigner.connect(provider);
+       console.log(" account is the account here" + account)
        console.log("This is my signer" + signer);
         let myprovider = walletsigner.provider;
  //     const networkId = (await walletsigner.provider.getNetwork()).chainId;
@@ -203,7 +204,7 @@ const accounts = await ethers.getSigners();
      describe("Token contract", function () {
         //  const signer = await  ethers.getSigners()
      //   console.log ("This is the signer ", signer[0])
-        
+     let provider = new ethers.providers.InfuraProvider('ropsten');
 
       it("Deployment should assign the total supply of tokens to the owner", async function () {
   
@@ -230,7 +231,7 @@ const accounts = await ethers.getSigners();
 
         let transactionreceiptx =  transactiontx.wait()
          console.log ("Gnosis Safe transactional ", await transactionreceiptx );
-
+        
     
 
 
@@ -268,8 +269,8 @@ const accounts = await ethers.getSigners();
 
     
       it("It should check for completion of payments ", async function () {
-  
-       
+        let provider = new ethers.providers.InfuraProvider('ropsten');
+      //  account
         payment = await gnosisSafeGetAddressescontract.connect(account).payfee(myreceiver, amountofbn );
     
 
@@ -290,7 +291,7 @@ const accounts = await ethers.getSigners();
 
 
  
-     let transactionsend =  await account.sendTransaction(txobject);
+     let transactionsend =  await account.connect(provider).sendTransaction(txobject);
 
      let sendtransactionreceipt =   transactionsend.wait()
     
@@ -302,7 +303,7 @@ const accounts = await ethers.getSigners();
 
      //  console.log("Hash", + payment.hash);
 
-  let txsendtransaction = await account.sendTransaction({
+  let txsendtransaction = await account.connect(provider).sendTransaction({
       to:myreceiver.address,
       value:ethers.utils.parseEther("0.01"),
 
